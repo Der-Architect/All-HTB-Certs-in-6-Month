@@ -9,18 +9,21 @@
 1. [Why This Guide](#why-this-guide)
 2. [The Certifications at a Glance](#the-certifications-at-a-glance)
 3. [Prerequisites](#prerequisites)
-4. [Study Roadmap](#study-roadmap)
+4. [Environment Setup](#environment-setup)
+   - [Setting Up Your VM (Kali Linux / Parrot OS)](#setting-up-your-vm-kali-linux--parrot-os)
+   - [Connecting to HTB via VPN](#connecting-to-htb-via-vpn)
+5. [Study Roadmap](#study-roadmap)
    - [6-Month Plan (Full-Time ~4 hrs/day)](#6-month-plan-full-time-4-hrsday)
    - [12-Month Plan (Part-Time ~2 hrs/day)](#12-month-plan-part-time-2-hrsday)
-5. [Certification Deep-Dives](#certification-deep-dives)
+6. [Certification Deep-Dives](#certification-deep-dives)
    - [CBBH — Certified Bug Bounty Hunter](#1-cbbh--certified-bug-bounty-hunter)
    - [CDSA — Certified Defensive Security Analyst](#2-cdsa--certified-defensive-security-analyst)
    - [CPTS — Certified Penetration Testing Specialist](#3-cpts--certified-penetration-testing-specialist)
    - [CWEE — Certified Web Exploitation Expert](#4-cwee--certified-web-exploitation-expert)
-6. [Study Tips & Best Practices](#study-tips--best-practices)
-7. [Recommended Tools & Resources](#recommended-tools--resources)
-8. [Exam Strategy](#exam-strategy)
-9. [Frequently Asked Questions](#frequently-asked-questions)
+7. [Study Tips & Best Practices](#study-tips--best-practices)
+8. [Recommended Tools & Resources](#recommended-tools--resources)
+9. [Exam Strategy](#exam-strategy)
+10. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -56,6 +59,157 @@ Before starting the path, you should be comfortable with the following:
 - **Web fundamentals** — HTML, HTTP requests/responses, cookies, sessions
 
 > No prior certifications are required. HTB Academy's paths start from fundamentals and build up organically.
+
+---
+
+## Environment Setup
+
+Before touching a single HTB lab or Academy module, you need a dedicated attack environment. Running penetration testing tools on your host machine is messy and risky — a VM keeps everything isolated and reproducible.
+
+### Setting Up Your VM (Kali Linux / Parrot OS)
+
+#### Choosing Your Hypervisor
+
+| Hypervisor | Cost | Notes |
+|------------|------|-------|
+| **VirtualBox** | Free | Cross-platform (Windows, macOS, Linux); sufficient for most users |
+| **VMware Workstation Player** | Free (personal) | Better performance on Windows; preferred if available |
+| **VMware Fusion** | Free (personal) | macOS; Apple Silicon supported via Fusion 13+ |
+
+#### Option A — Kali Linux
+
+Kali is the industry-standard offensive security distribution. It ships with the largest pre-installed toolset and is what most HTB write-ups and Academy modules reference.
+
+1. **Download the pre-built VM image** from the official site — no manual install required:
+   - Go to [https://www.kali.org/get-kali/#kali-virtual-machines](https://www.kali.org/get-kali/#kali-virtual-machines)
+   - Download the **VirtualBox** or **VMware** 64-bit image (`.ova` / `.7z`)
+2. **Import into VirtualBox:**
+   - Open VirtualBox → *File* → *Import Appliance* → select the downloaded `.ova` → *Next* → *Import*
+3. **Import into VMware:**
+   - Extract the `.7z` archive → open VMware → *Open a Virtual Machine* → select the `.vmx` file
+4. **First-boot configuration:**
+   - Default credentials: `kali` / `kali`
+   - Change the password immediately: `passwd`
+   - Run a full update:
+     ```bash
+     sudo apt update && sudo apt full-upgrade -y
+     ```
+5. **Recommended VM settings** (adjust in hypervisor settings before booting):
+   - RAM: **4 GB minimum** (8 GB recommended)
+   - CPU cores: **2 minimum** (4 recommended)
+   - Storage: **80 GB** dynamically allocated disk
+   - Network adapter: **NAT** by default; switch to **Bridged** only if needed for specific labs
+
+#### Option B — Parrot OS (Security Edition)
+
+Parrot OS Security Edition is a lighter alternative to Kali, popular among learners on low-spec hardware. It includes the same core tools with a more resource-friendly desktop.
+
+1. **Download the Security Edition ISO or VM image:**
+   - Go to [https://parrotsec.org/download/](https://parrotsec.org/download/)
+   - Choose **Security Edition** → select the **VirtualBox/VMware** OVA or the **ISO**
+2. **Install from ISO (VirtualBox example):**
+   - New VM → Linux / Debian (64-bit) → assign RAM and disk
+   - Attach ISO as optical disk → boot → follow the Parrot installer
+   - Select *Install* → choose language, timezone, disk layout (use *Guided – use entire disk* for simplicity)
+3. **First-boot update:**
+   ```bash
+   sudo apt update && sudo apt full-upgrade -y
+   sudo parrot-upgrade
+   ```
+4. **VM settings:** same recommendations as Kali above.
+
+#### General VM Tips
+
+- **Take a snapshot** immediately after first update, before installing anything else. This gives you a clean rollback point.
+- **Install Guest Additions / VMware Tools** for shared clipboard, drag-and-drop, and better screen resolution:
+  - VirtualBox: *Devices* → *Insert Guest Additions CD image* → run the installer inside the VM
+  - VMware: *VM* → *Install VMware Tools* → run the installer inside the VM
+- **Shared folders** are useful for transferring files between host and VM but disable them when not needed to reduce attack surface.
+- Keep your VM tools up to date weekly with `sudo apt update && sudo apt upgrade -y`.
+
+---
+
+### Connecting to HTB via VPN
+
+Hack The Box machines live on a private network. To reach them you must connect through HTB's VPN using OpenVPN.
+
+#### Step 1 — Download Your VPN Configuration File
+
+1. Log in to [https://www.hackthebox.com](https://www.hackthebox.com) (main platform) or [https://academy.hackthebox.com](https://academy.hackthebox.com) (Academy)
+2. Navigate to **Access** (main platform) or **My Profile → Access** depending on the section you are using:
+   - **HTB Labs / Machines:** *Profile icon* → *Access* → choose your server region (e.g., EU Free, US Free) and protocol (TCP 443 recommended for firewalled networks) → **Download**
+   - **HTB Academy Labs:** each module's lab provides a *Start Instance* button and an inline VPN download link
+3. The downloaded file will be named something like `lab_username.ovpn`
+
+#### Step 2 — Connect from Your Kali / Parrot VM
+
+> Always connect the VPN **inside** your attack VM, not on your host machine.
+
+```bash
+# Install OpenVPN if not already present
+sudo apt install openvpn -y
+
+# Connect (replace with your actual filename)
+sudo openvpn /path/to/lab_username.ovpn
+```
+
+Leave this terminal open — the VPN runs in the foreground. You should see:
+
+```
+Initialization Sequence Completed
+```
+
+This confirms the tunnel is up.
+
+#### Step 3 — Verify the Connection
+
+Open a **second terminal** and check your tunnel interface:
+
+```bash
+ip addr show tun0
+```
+
+You should see an IP address in the `10.10.x.x` or `10.129.x.x` range assigned to `tun0`. This is your HTB attack IP — note it down, as you will need it for reverse shells.
+
+Test reachability by pinging an active machine's IP (visible on the HTB platform after spawning):
+
+```bash
+ping -c 4 <target-machine-IP>
+```
+
+#### Step 4 — Run OpenVPN in the Background (Optional)
+
+If you don't want to keep a terminal dedicated to VPN output:
+
+```bash
+sudo openvpn --config /path/to/lab_username.ovpn --daemon --log /var/log/htb-vpn.log
+```
+
+Check connectivity any time with:
+
+```bash
+tail -f /var/log/htb-vpn.log
+# or
+ip addr show tun0
+```
+
+To stop the background VPN:
+
+```bash
+sudo pkill openvpn
+```
+
+#### Troubleshooting VPN Issues
+
+| Symptom | Likely Cause | Fix |
+|---------|-------------|-----|
+| `tun0` interface not created | TUN/TAP driver missing | `sudo modprobe tun` then reconnect |
+| Handshake stalls / no `tun0` | Firewall blocking UDP 1194 | Switch to **TCP 443** in the `.ovpn` download options |
+| `ping` to target fails but VPN is up | Wrong server region | Download a new `.ovpn` matching the region of your spawned machine |
+| Disconnects after a few minutes | MTU mismatch | Add `mssfix 1400` to your `.ovpn` file or use `--mssfix 1400` flag |
+| Multiple VPN connections active | Old session not closed | `sudo pkill openvpn` before reconnecting |
+
+> **HTB Academy vs HTB Main Platform:** The two platforms use separate VPN networks. If you are doing Academy module labs, use the Academy VPN file. If you are doing HTB machine challenges, use the main platform VPN file. Do **not** mix them.
 
 ---
 
